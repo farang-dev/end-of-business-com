@@ -73,39 +73,8 @@ def main():
     try:
         st.set_page_config(page_title="MailSlayer", layout="wide")
 
-        # Custom CSS for better mobile responsiveness
-        st.markdown("""
-        <style>
-        .stApp {
-            max-width: 100%;
-            padding: 1rem;
-        }
-        .stSelectbox, .stTextInput, .stTextArea {
-            max-width: 100%;
-        }
-        @media (max-width: 640px) {
-            .stApp {
-                padding: 0.5rem;
-            }
-            .stButton > button {
-                width: 100%;
-            }
-        }
-        </style>
-        """, unsafe_allow_html=True)
-
-        # Language selection in sidebar for desktop, at the top for mobile
-        if st.session_state.get('mobile_detected') is None:
-            st.session_state.mobile_detected = False
-            if st.button("Switch to Mobile View"):
-                st.session_state.mobile_detected = True
-                st.experimental_rerun()
-
-        if st.session_state.mobile_detected:
-            lang = st.selectbox("Language / 言語", ["English", "日本語"], index=0)
-        else:
-            lang = st.sidebar.selectbox("Language / 言語", ["English", "日本語"], index=0)
-
+        # Language selection
+        lang = st.sidebar.selectbox("Language / 言語", ["English", "日本語"], index=0)
         lang_code = 'en' if lang == "English" else 'ja'
         t = translations[lang_code]
 
@@ -137,18 +106,14 @@ def create_message(t):
     tone_options = ["Professional", "Neutral", "Casual"] if t == translations['en'] else ["ビジネス", "中立", "カジュアル"]
     length_options = ["Very Short", "Short", "Medium", "Detailed (Long)"] if t == translations['en'] else ["とても短い", "短い", "普通", "詳細（長い）"]
 
-    col1, col2 = st.columns(2)
-    with col1:
-        recipient = st.selectbox(t['recipient'], recipient_options)
-        platform = st.selectbox(t['platform'], platform_options)
-    with col2:
-        tone = st.selectbox(t['tone'], tone_options)
-        length = st.selectbox(t['length'], length_options)
-
+    recipient = st.selectbox(t['recipient'], recipient_options)
+    platform = st.selectbox(t['platform'], platform_options)
+    tone = st.selectbox(t['tone'], tone_options)
+    length = st.selectbox(t['length'], length_options)
     receiver_name = st.text_input(t['receiver_name'])
     message = st.text_area(t['message_input'])
 
-    if st.button(t['generate_message'], use_container_width=True):
+    if st.button(t['generate_message']):
         generated_message = generate_ai_message(recipient, platform, tone, length, receiver_name, message, t == translations['ja'])
         display_and_edit_message(generated_message, t)
 
@@ -159,17 +124,13 @@ def reply_to_message(t):
     tone_options = ["Professional", "Neutral", "Casual"] if t == translations['en'] else ["ビジネス", "中立(n)", "カジュアル"]
     length_options = ["Very Short", "Short", "Medium", "Detailed (Long)"] if t == translations['en'] else ["とても短い", "短い", "普通", "詳細（長い）"]
 
-    col1, col2 = st.columns(2)
-    with col1:
-        recipient = st.selectbox(t['recipient'], recipient_options)
-        platform = st.selectbox(t['platform'], platform_options)
-    with col2:
-        tone = st.selectbox(t['tone'], tone_options)
-        length = st.selectbox(t['length'], length_options)
-
+    recipient = st.selectbox(t['recipient'], recipient_options)
+    platform = st.selectbox(t['platform'], platform_options)
+    tone = st.selectbox(t['tone'], tone_options)
+    length = st.selectbox(t['length'], length_options)
     receiver_name = st.text_input(t['receiver_name'])
 
-    if st.button(t['generate_reply'], use_container_width=True):
+    if st.button(t['generate_reply']):
         generated_reply = generate_ai_reply(original_message, recipient, platform, tone, length, receiver_name, t == translations['ja'])
         display_and_edit_message(generated_reply, t)
 
@@ -195,13 +156,13 @@ def generate_ai_reply(original_message, recipient, platform, tone, length, recei
 
 def display_and_edit_message(message, t):
     st.text_area(t['generated_message'], value=message, height=300)
-    st.button(t['copy_to_clipboard'], on_click=lambda: st.write(t['copied_message']), use_container_width=True)
+    st.button(t['copy_to_clipboard'], on_click=lambda: st.write(t['copied_message']))
 
     edit_request = st.text_input(t['edit_request'])
     if edit_request:
         edited_message = edit_ai_message(message, edit_request)
         st.text_area(t['edited_message'], value=edited_message, height=300)
-        st.button(t['copy_edited_message'], on_click=lambda: st.write(t['copied_edited_message']), use_container_width=True)
+        st.button(t['copy_edited_message'], on_click=lambda: st.write(t['copied_edited_message']))
 
 def edit_ai_message(original_message, edit_request):
     client = OpenAI(api_key=st.session_state.openai_api_key)
