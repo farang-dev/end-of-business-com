@@ -2,6 +2,8 @@ import streamlit as st
 from openai import OpenAI
 import traceback
 import time
+import signal
+import functools
 
 # Define translations
 translations = {
@@ -40,7 +42,7 @@ translations = {
         'platform': "プラットフォーム：",
         'tone': "トーン：",
         'length': "長さ：",
-        'receiver_name': "受信者の名前：",
+        'receiver_name': "受信の名前：",
         'message_input': "伝えたいこと：",
         'generate_message': "メッセージを生成",
         'paste_message': "返信したいメッセージを貼り付けてください：",
@@ -170,6 +172,23 @@ def generate_ai_reply(original_message, recipient, platform, tone, length, recei
             return "Failed to generate reply. Please try again."
 
     return retry_api_call(api_call)
+
+def timeout_wrapper(timeout_duration):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            def handler(signum, frame):
+                raise TimeoutError(f"Function call timed out after {timeout_duration} seconds")
+
+            signal.signal(signal.SIGALRM, handler)
+            signal.alarm(timeout_duration)
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                signal.alarm(0)
+            return result
+        return wrapper
+    return decorator
 
 @timeout_wrapper(timeout_duration=30)
 def retry_api_call(func, max_retries=3):
