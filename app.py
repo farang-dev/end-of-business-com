@@ -1,5 +1,5 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 import traceback
 import time
 
@@ -136,21 +136,21 @@ def reply_to_message(t):
         display_and_edit_message(generated_reply, t)
 
 def generate_ai_message(recipient, platform, tone, length, receiver_name, message, is_japanese):
-    openai.api_key = st.session_state.openai_api_key
+    client = OpenAI(api_key=st.session_state.openai_api_key)
     language = "日本語" if is_japanese else "English"
     prompt = f"Generate a {tone} {length} message in {language} for {recipient} named {receiver_name} on {platform}. The message should convey: {message}"
 
-    return retry_api_call(lambda: openai.ChatCompletion.create(
+    return retry_api_call(lambda: client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
     ).choices[0].message.content)
 
 def generate_ai_reply(original_message, recipient, platform, tone, length, receiver_name, is_japanese):
-    openai.api_key = st.session_state.openai_api_key
+    client = OpenAI(api_key=st.session_state.openai_api_key)
     language = "日本語" if is_japanese else "English"
     prompt = f"Generate a {tone} {length} reply in {language} for {recipient} named {receiver_name} on {platform} to the following message: {original_message}"
 
-    return retry_api_call(lambda: openai.ChatCompletion.create(
+    return retry_api_call(lambda: client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
     ).choices[0].message.content)
@@ -176,10 +176,10 @@ def display_and_edit_message(message, t):
         st.button(t['copy_edited_message'], on_click=lambda: st.write(t['copied_edited_message']))
 
 def edit_ai_message(original_message, edit_request):
-    openai.api_key = st.session_state.openai_api_key
+    client = OpenAI(api_key=st.session_state.openai_api_key)
     prompt = f"Edit the following message according to this request: {edit_request}\n\nOriginal message: {original_message}"
 
-    return retry_api_call(lambda: openai.ChatCompletion.create(
+    return retry_api_call(lambda: client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
     ).choices[0].message.content)
