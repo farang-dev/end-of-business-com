@@ -91,10 +91,15 @@ def main():
         # Main option selection
         option = st.radio(t['choose_option'], [t['create'], t['reply']])
 
-        if option == t['create']:
-            create_message(t)
-        else:
-            reply_to_message(t)
+        try:
+            with st.spinner("Processing your request..."):
+                if option == t['create']:
+                    create_message(t)
+                else:
+                    reply_to_message(t)
+        except Exception as e:
+            st.error(f"An error occurred: {str(e)}")
+            st.error(traceback.format_exc())
 
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
@@ -122,7 +127,7 @@ def reply_to_message(t):
     recipient_options = ["Colleague", "Manager", "Friend", "Family"] if t == translations['en'] else ["同僚", "上司", "友人", "家族"]
     platform_options = ["Email", "LinkedIn", "Instagram", "WhatsApp"] if t == translations['en'] else ["メール", "LinkedIn", "Instagram", "WhatsApp"]
     tone_options = ["Professional", "Neutral", "Casual"] if t == translations['en'] else ["ビジネス", "中立(n)", "カジュアル"]
-    length_options = ["Very Short", "Short", "Medium", "Detailed (Long)"] if t == translations['en'] else ["とても短い", "短い", "普通", "詳細（長い）"]
+    length_options = ["Very Short", "Short", "Medium", "Detailed (Long)"] if t == translations['en'] else ["とて���短い", "短い", "普通", "詳細（長い）"]
 
     recipient = st.selectbox(t['recipient'], recipient_options)
     platform = st.selectbox(t['platform'], platform_options)
