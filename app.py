@@ -1,6 +1,7 @@
 import streamlit as st
 from openai import OpenAI
 import traceback
+import time
 
 # Define translations
 translations = {
@@ -138,21 +139,47 @@ def generate_ai_message(recipient, platform, tone, length, receiver_name, messag
     client = OpenAI(api_key=st.session_state.openai_api_key)
     language = "日本語" if is_japanese else "English"
     prompt = f"Generate a {tone} {length} message in {language} for {recipient} named {receiver_name} on {platform}. The message should convey: {message}"
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return response.choices[0].message.content
+
+    def api_call():
+        try:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            st.error(f"API request failed: {str(e)}")
+            return "Failed to generate message. Please try again."
+
+    return retry_api_call(api_call)
 
 def generate_ai_reply(original_message, recipient, platform, tone, length, receiver_name, is_japanese):
     client = OpenAI(api_key=st.session_state.openai_api_key)
     language = "日本語" if is_japanese else "English"
     prompt = f"Generate a {tone} {length} reply in {language} for {recipient} named {receiver_name} on {platform} to the following message: {original_message}"
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return response.choices[0].message.content
+
+    def api_call():
+        try:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            st.error(f"API request failed: {str(e)}")
+            return "Failed to generate reply. Please try again."
+
+    return retry_api_call(api_call)
+
+@timeout_wrapper(timeout_duration=30)
+def retry_api_call(func, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            return func()
+        except Exception as e:
+            if attempt == max_retries - 1:
+                raise e
+            time.sleep(1)  # Wait for 1 second before retrying
 
 def display_and_edit_message(message, t):
     st.text_area(t['generated_message'], value=message, height=300)
@@ -175,43 +202,3 @@ def edit_ai_message(original_message, edit_request):
 
 if __name__ == "__main__":
     main()
-                messages=[{"role": "user", "content": prompt}]
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            st.error(f"API request failed: {str(e)}")
-            return "Failed to generate message. Please try again."
-
-    return retry_api_call(api_call)
-
-            messages=[{"rol    e": "user", "content": prompt}]
-    return asyncio.run(api_call())
-        return response.choices[0].message    .content
-
-    try:
-etry_api_call(a    pi_call)
-    @timeout_wrapper(timeout_duration=30)
-    except Exception as e:
-        try:
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}]
-            )
-if __name__ == "__main__":
-    main()
-
-            return "Failed to generate reply. Please try again."
-
-    return retry_api_call(api_call)
-
-        try:
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}]
-)
-    @timeout_wrapper(timeout_duration=30)
-            return response.choices[0].message.content
-
-def retry_api_call(func, max_retries=3):
-    for attempt in range(max_retries):
-        try:
