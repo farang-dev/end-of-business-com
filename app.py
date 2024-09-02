@@ -1,5 +1,5 @@
 import streamlit as st
-from openai import OpenAI
+import openai
 import traceback
 import time
 import signal
@@ -138,13 +138,13 @@ def reply_to_message(t):
         display_and_edit_message(generated_reply, t)
 
 def generate_ai_message(recipient, platform, tone, length, receiver_name, message, is_japanese):
-    client = OpenAI(api_key=st.session_state.openai_api_key)
+    openai.api_key = st.session_state.openai_api_key
     language = "日本語" if is_japanese else "English"
     prompt = f"Generate a {tone} {length} message in {language} for {recipient} named {receiver_name} on {platform}. The message should convey: {message}"
 
     def api_call():
         try:
-            response = client.chat.completions.create(
+            response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": prompt}]
             )
@@ -156,13 +156,13 @@ def generate_ai_message(recipient, platform, tone, length, receiver_name, messag
     return retry_api_call(api_call)
 
 def generate_ai_reply(original_message, recipient, platform, tone, length, receiver_name, is_japanese):
-    client = OpenAI(api_key=st.session_state.openai_api_key)
+    openai.api_key = st.session_state.openai_api_key
     language = "日本語" if is_japanese else "English"
     prompt = f"Generate a {tone} {length} reply in {language} for {recipient} named {receiver_name} on {platform} to the following message: {original_message}"
 
     def api_call():
         try:
-            response = client.chat.completions.create(
+            response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": prompt}]
             )
@@ -211,9 +211,9 @@ def display_and_edit_message(message, t):
         st.button(t['copy_edited_message'], on_click=lambda: st.write(t['copied_edited_message']))
 
 def edit_ai_message(original_message, edit_request):
-    client = OpenAI(api_key=st.session_state.openai_api_key)
+    openai.api_key = st.session_state.openai_api_key
     prompt = f"Edit the following message according to this request: {edit_request}\n\nOriginal message: {original_message}"
-    response = client.chat.completions.create(
+    response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
     )
