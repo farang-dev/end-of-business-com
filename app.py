@@ -2,8 +2,6 @@ import streamlit as st
 import openai
 import traceback
 import time
-import signal
-import functools
 
 # Define translations
 translations = {
@@ -142,62 +140,29 @@ def generate_ai_message(recipient, platform, tone, length, receiver_name, messag
     language = "日本語" if is_japanese else "English"
     prompt = f"Generate a {tone} {length} message in {language} for {recipient} named {receiver_name} on {platform}. The message should convey: {message}"
 
-    def api_call():
-        try:
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}]
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            st.error(f"API request failed: {str(e)}")
-            return "Failed to generate message. Please try again."
-
-    return retry_api_call(api_call)
+    return retry_api_call(lambda: openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}]
+    ).choices[0].message.content)
 
 def generate_ai_reply(original_message, recipient, platform, tone, length, receiver_name, is_japanese):
     openai.api_key = st.session_state.openai_api_key
     language = "日本語" if is_japanese else "English"
     prompt = f"Generate a {tone} {length} reply in {language} for {recipient} named {receiver_name} on {platform} to the following message: {original_message}"
 
-    def api_call():
-        try:
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}]
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            st.error(f"API request failed: {str(e)}")
-            return "Failed to generate reply. Please try again."
+    return retry_api_call(lambda: openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}]
+    ).choices[0].message.content)
 
-    return retry_api_call(api_call)
-
-def timeout_wrapper(timeout_duration):
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            def handler(signum, frame):
-                raise TimeoutError(f"Function call timed out after {timeout_duration} seconds")
-
-            signal.signal(signal.SIGALRM, handler)
-            signal.alarm(timeout_duration)
-            try:
-                result = func(*args, **kwargs)
-            finally:
-                signal.alarm(0)
-            return result
-        return wrapper
-    return decorator
-
-@timeout_wrapper(timeout_duration=30)
 def retry_api_call(func, max_retries=3):
     for attempt in range(max_retries):
         try:
             return func()
         except Exception as e:
             if attempt == max_retries - 1:
-                raise e
+                st.error(f"API request failed: {str(e)}")
+                return "Failed to generate message. Please try again."
             time.sleep(1)  # Wait for 1 second before retrying
 
 def display_and_edit_message(message, t):
@@ -213,11 +178,11 @@ def display_and_edit_message(message, t):
 def edit_ai_message(original_message, edit_request):
     openai.api_key = st.session_state.openai_api_key
     prompt = f"Edit the following message according to this request: {edit_request}\n\nOriginal message: {original_message}"
-    response = openai.ChatCompletion.create(
+
+    return retry_api_call(lambda: openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
-    )
-    return response.choices[0].message.content
+    ).choices[0].message.content)
 
 if __name__ == "__main__":
     main()
