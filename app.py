@@ -3,8 +3,11 @@ from openai import OpenAI
 import traceback
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from streamlit.runtime.caching import clear_cache
 import time
+import logging
+
+# Add this at the beginning of the file, after imports
+logging.basicConfig(level=logging.INFO)
 
 # Initialize OpenAI client at the top level
 client = None
@@ -116,14 +119,16 @@ def main():
                 else:
                     reply_to_message(t)
         except Exception as e:
-            st.error(f"An error occurred: {str(e)}")
+            logging.error(f"An error occurred: {str(e)}")
+            logging.error(traceback.format_exc())
+            st.error("An error occurred. Please try again or contact support if the issue persists.")
             st.error("If you're on a mobile device, try refreshing the page or using a desktop browser.")
-            st.error(traceback.format_exc())
 
     except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
+        logging.error(f"An error occurred: {str(e)}")
+        logging.error(traceback.format_exc())
+        st.error("An error occurred. Please try again or contact support if the issue persists.")
         st.error("If you're on a mobile device, try refreshing the page or using a desktop browser.")
-        st.error(traceback.format_exc())
 
 def create_message(t):
     recipient_options = ["Colleague", "Manager", "Friend", "Family"] if t == translations['en'] else ["同僚", "上司", "友人", "家族"]
@@ -193,7 +198,7 @@ def reply_to_message(t):
         progress_bar.empty()
         status_text.empty()
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=3600, show_spinner=False)
 def generate_ai_message(recipient, platform, tone, length, receiver_name, message, is_japanese):
     global client
     language = "日本語" if is_japanese else "English"
@@ -212,7 +217,7 @@ def generate_ai_message(recipient, platform, tone, length, receiver_name, messag
         st.error(f"API request failed after multiple attempts: {str(e)}")
         return "Failed to generate message. Please try again."
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=3600, show_spinner=False)
 def generate_ai_reply(original_message, recipient, platform, tone, length, receiver_name, is_japanese):
     global client
     language = "日本語" if is_japanese else "English"
@@ -231,7 +236,7 @@ def generate_ai_reply(original_message, recipient, platform, tone, length, recei
         st.error(f"API request failed after multiple attempts: {str(e)}")
         return "Failed to generate reply. Please try again."
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=3600, show_spinner=False)
 def edit_ai_message(original_message, edit_request):
     global client
     prompt = f"Edit the following message according to this request: {edit_request}\n\nOriginal message: {original_message}"
@@ -290,7 +295,7 @@ def clear_old_cache():
 
     st.session_state.cache_counter += 1
     if st.session_state.cache_counter > 10:  # Clear cache every 10 operations
-        clear_cache()
+        st.cache_data.clear()
         st.session_state.cache_counter = 0
 
 if __name__ == "__main__":
