@@ -166,14 +166,39 @@ def retry_api_call(func, max_retries=3):
             time.sleep(1)  # Wait for 1 second before retrying
 
 def display_and_edit_message(message, t):
-    st.text_area(t['generated_message'], value=message, height=300)
-    st.button(t['copy_to_clipboard'], on_click=lambda: st.write(t['copied_message']))
+    st.text_area(t['generated_message'], value=message, height=300, key="generated_message")
+
+    # Add a JavaScript function to copy text to clipboard
+    st.markdown("""
+    <script>
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function() {
+            console.log('Copying to clipboard was successful!');
+        }, function(err) {
+            console.error('Could not copy text: ', err);
+        });
+    }
+    </script>
+    """, unsafe_allow_html=True)
+
+    # Create a button that calls the JavaScript function
+    st.markdown(f"""
+    <button onclick="copyToClipboard(document.querySelector('textarea[data-testid="stTextArea"]').value)">
+        {t['copy_to_clipboard']}
+    </button>
+    """, unsafe_allow_html=True)
 
     edit_request = st.text_input(t['edit_request'])
     if edit_request:
         edited_message = edit_ai_message(message, edit_request)
-        st.text_area(t['edited_message'], value=edited_message, height=300)
-        st.button(t['copy_edited_message'], on_click=lambda: st.write(t['copied_edited_message']))
+        st.text_area(t['edited_message'], value=edited_message, height=300, key="edited_message")
+
+        # Create a button to copy the edited message
+        st.markdown(f"""
+        <button onclick="copyToClipboard(document.querySelector('textarea[data-testid="stTextArea"][aria-label="{t['edited_message']}"]').value)">
+            {t['copy_edited_message']}
+        </button>
+        """, unsafe_allow_html=True)
 
 def edit_ai_message(original_message, edit_request):
     client = OpenAI(api_key=st.session_state.openai_api_key)
